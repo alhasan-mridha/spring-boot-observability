@@ -8,13 +8,14 @@ group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	sourceCompatibility = '17'
+	sourceCompatibility = '21'
 }
 
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
+	agent
 }
 
 repositories {
@@ -22,12 +23,31 @@ repositories {
 }
 
 dependencies {
+	agent "io.opentelemetry.javaagent:opentelemetry-javaagent:1.32.0"
+
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
+tasks.named('bootBuildImage') {
+	builder = 'paketobuildpacks/builder-jammy-base:latest'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.register('copyAgent', Copy) {
+	from configurations.agent {
+		rename "opentelemetry-javaagent-.*\\.jar", "opentelemetry-javaagent.jar"
+	}
+	into layout.buildDirectory.dir("agent")
+}
+
+bootJar {
+	dependsOn copyAgent
+
+	archiveFileName = "app.jar"
 }
