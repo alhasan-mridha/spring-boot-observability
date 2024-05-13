@@ -1,7 +1,22 @@
 package com.example.orderservice;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
-public record Order(Long id, Long customerId, ZonedDateTime orderDate, BigDecimal totalAmount) {
+@Entity
+@Table(name = "orders")
+@Getter
+@NoArgsConstructor
+public class Order {
+    @Id
+    private Long id;
+    private Long customerId;
+    private ZonedDateTime orderDate;
+    private BigDecimal total;
 }
