@@ -7,7 +7,9 @@ services:
       OTEL_TRACES_EXPORTER: "jaeger,zipkin"
       OTEL_EXPORTER_JAEGER_ENDPOINT: "http://jaeger:14250"
       OTEL_EXPORTER_ZIPKIN_ENDPOINT: "http://zipkin:9411/api/v2/spans"
-      OTEL_METRICS_EXPORTER: "logging"
+      OTEL_METRICS_EXPORTER: "prometheus"
+      OTEL_EXPORTER_PROMETHEUS_HOST: "0.0.0.0"
+      OTEL_EXPORTER_PROMETHEUS_PORT: "9464"
       OTEL_LOGS_EXPORTER: "logging"
     ports:
       - "8080:8080"
@@ -15,6 +17,31 @@ services:
       - postgres
       - jaeger-all-in-one
       - zipkin-all-in-one
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+    restart: always
+    ports:
+      - "9090:9090"
+    depends_on:
+      - order-service
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    volumes:
+      - ./docker/grafana/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
   jaeger-all-in-one:
     container_name: jaeger
     image: jaegertracing/all-in-one:latest
@@ -24,11 +51,13 @@ services:
     ports:
       - "16686:16686"
       - "14250"
+
   zipkin-all-in-one:
     container_name: zipkin
     image: openzipkin/zipkin:latest
     ports:
       - "9411:9411"
+
   postgres:
     container_name: postgres
     image: postgres:latest
